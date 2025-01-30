@@ -1,17 +1,360 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!DOCTYPE html>
 <html>
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2575.2">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; -webkit-text-stroke: #000000}
-    span.s1 {font-kerning: none}
-  </style>
+    <title>Drum System Player</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --secondary: #a8a5e6;
+            --background: #2d2d2d;
+            --text: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .title {
+            font-size: 2.2rem;
+            margin: 0;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .dropdown-group {
+            display: grid;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .select-menu {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: var(--text);
+            appearance: none;
+            transition: all 0.3s ease;
+        }
+
+        .select-menu:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.2);
+        }
+
+        .select-menu option {
+            padding: 8px;
+            background: #2d2d2d;
+            color: white;
+            white-space: nowrap;
+        }
+
+        .tempo-control {
+            margin: 2rem 0;
+        }
+
+        .tempo-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .tempo-slider {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .tempo-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .tempo-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-play {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-play:hover {
+            background: #5b4bc4;
+        }
+
+        .btn-stop {
+            background: #ff4757;
+            color: white;
+        }
+
+        .btn-stop:hover {
+            background: #e8414f;
+        }
+
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            place-items: center;
+            z-index: 1000;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .control-panel {
+                padding: 1.5rem;
+            }
+        }
+    </style>
 </head>
 <body>
-<p class="p1"><span class="s1">Hej jag testar att ändra här<span class="Apple-converted-space"> </span></span></p>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Drum System Player</h1>
+        </div>
+
+        <div class="control-panel">
+            <div class="dropdown-group">
+                <select id="systemSelect" class="select-menu">
+                    <option value="">Loading Systems...</option>
+                </select>
+
+                <select id="melodySelect" class="select-menu">
+                    <option value="">Loading Melodies...</option>
+                </select>
+            </div>
+
+            <div class="tempo-control">
+                <div class="tempo-label">
+                    <span>Tempo</span>
+                    <span id="tempoValue">100%</span>
+                </div>
+                <input type="range" class="tempo-slider" 
+                       min="50" max="200" value="100" 
+                       id="tempoSlider">
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-play" onclick="playBoth()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    Play
+                </button>
+                <button class="btn btn-stop" onclick="stopAll()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 6h12v12H6z"/>
+                    </svg>
+                    Stop
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading">Loading...</div>
+
+    <script>
+        let midiOutput = null;
+        let currentTempo = 1.0;
+        let isPlaying = false;
+        const tempoSlider = document.getElementById('tempoSlider');
+        const tempoValue = document.getElementById('tempoValue');
+
+        // Initialize Web MIDI
+        async function initMIDI() {
+            try {
+                const access = await navigator.requestMIDIAccess();
+                const outputs = access.outputs.values();
+                midiOutput = outputs.next().value;
+            } catch (error) {
+                alert("MIDI error: " + error.message);
+            }
+        }
+
+        // Tempo Control
+        tempoSlider.addEventListener('input', (e) => {
+            currentTempo = e.target.value / 100;
+            tempoValue.textContent = `${e.target.value}%`;
+        });
+
+        // Dynamic Dropdown Population
+        async function populateDropdowns() {
+            try {
+                const [systems, melodies] = await Promise.all([
+                    fetchMIDIFiles('systems'),
+                    fetchMIDIFiles('melodies')
+                ]);
+
+                populateSelect('systemSelect', systems);
+                populateSelect('melodySelect', melodies);
+            } catch (error) {
+                alert("Error loading files: " + error.message);
+            }
+        }
+
+        async function fetchMIDIFiles(folder) {
+            const response = await fetch(`/${folder}/`);
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            return Array.from(doc.querySelectorAll('a'))
+                .map(link => link.href.split('/').pop())
+                .filter(file => file.endsWith('.mid'))
+                .map(file => ({
+                    path: `${folder}/${file}`,
+                    name: file.replace('.mid', '')
+                }));
+        }
+
+        function populateSelect(selectId, files) {
+            const select = document.getElementById(selectId);
+            select.innerHTML = '<option value="">Select ' + 
+                (selectId === 'systemSelect' ? 'System' : 'Melody') + '</option>';
+            
+            files.forEach(file => {
+                const option = document.createElement('option');
+                option.value = file.path;
+                option.textContent = file.name;
+                select.appendChild(option);
+            });
+        }
+
+        // Playback Control
+        async function playBoth() {
+            if (isPlaying) return;
+            
+            const systemFile = document.getElementById('systemSelect').value;
+            const melodyFile = document.getElementById('melodySelect').value;
+
+            if (!systemFile || !melodyFile) {
+                alert("Please select both System and Melody!");
+                return;
+            }
+
+            isPlaying = true;
+            showLoading(true);
+
+            try {
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                const now = context.currentTime;
+
+                await Promise.all([
+                    playMIDIFile(systemFile, context, now),
+                    playMIDIFile(melodyFile, context, now)
+                ]);
+            } catch (error) {
+                alert("Playback error: " + error.message);
+            }
+
+            isPlaying = false;
+            showLoading(false);
+        }
+
+        async function playMIDIFile(url, context, startTime) {
+            const response = await fetch(url);
+            const arrayBuffer = await response.arrayBuffer();
+            const midi = new MIDIFile(arrayBuffer);
+            const tracks = midi.getTracks();
+
+            tracks.forEach(track => {
+                track.events.forEach(event => {
+                    if (event.type === MIDIEventType.NOTE_ON) {
+                        const scaledTime = startTime + (event.playTime / 1000) * (1 / currentTempo);
+                        scheduleNote(event.noteNumber, scaledTime, event.velocity);
+                    }
+                });
+            });
+        }
+
+        function scheduleNote(note, time, velocity) {
+            if (midiOutput) {
+                midiOutput.send([0x90, note, velocity], time * 1000);
+            }
+        }
+
+        function stopAll() {
+            if (midiOutput) {
+                midiOutput.send([0xb0, 0x7b, 0x00]);
+            }
+            isPlaying = false;
+            showLoading(false);
+        }
+
+        function showLoading(show) {
+            document.querySelector('.loading').style.display = show ? 'grid' : 'none';
+        }
+
+        // Initialize on load
+        window.addEventListener('load', async () => {
+            await initMIDI();
+            await populateDropdowns();
+            document.body.addEventListener('touchstart', () => {
+                new AudioContext().resume();
+            });
+        });
+    </script>
 </body>
 </html>
